@@ -412,7 +412,17 @@ corrplot(cor(db_mercurio_num), method = "number", col = COL1("Blues"), tl.col = 
 corrplot(cor(db_mercurio_num), method = "color", col = COL1("Blues"), addCoef.col = "black", cl.pos = "n", tl.col = "black", main = "Matriz de Correlación", mar=c(0,0,1,0))
 ```
 
+Las figuras anteriores muestran la matriz de correlaciones de los valores numéricos de nuestro dataset, en estas podemos observar qué variables se encuentran mayormente relacionadas entre sí para al momento de implementar el modelo estadístico, se elijan las variables correctas para tener mucho mejores resultados. 
 
+De acuerdo con la matriz, podemos observar que la variable x7 (concentración media de mercurio) está fuertemente correlacionada positivamente con las variables x9 (mínima concentración de mercurio), x10 (máxima concentración de mercurio), y x11 (estimación), sin embargo, al tener un valor tan fuerte de correlación, es posible que se presente el problema de multicolinealidad; este problema puede dificultar la interpretción de los resultados del modelo de regresión, de hecho, una de las formas más sencillas de detectar un posible problema de este tipo es observar la matriz de correlación y buscar que variables se encuentran altamente relacionadas entre sí. 
+
+Debido a este problema de multicolinealidad se decidió utilizar otras variables para el modelo de regresión, tomando en cuenta que estas tienen una correlación que va de débil a moderada con respecto a la variable x7 (concentración media de mercurio), dichas variables a utilizar en el modelo de regresión son: 
+
+- *X3* = alcalinidad (mg/l de carbonato de calcio)
+- *X4* = PH
+- *X5* = calcio (mg/l)
+- *X6* = clorofila (mg/l)
+- *X7* = concentración media de mercurio (parte por millón) en el tejido muscualar del grupo de peces estudiados en cada lago
 
 ## ANOVA
 
