@@ -534,7 +534,7 @@ Al calcular los intervalos de confianza, obtenemos que los valores los valores s
 - Para Mayor el intervalo va de 0.7550654 a 0.9676619
 
 ```{r}
-boxplot(media_mercurio ~ nivel_concentracion, col = 2:5, horizontal = TRUE)
+boxplot(media_mercurio ~ nivel_concentracion, col = 2:5, horizontal = TRUE, main = "Boxplot de los Tratamientos (Menor y Mayor)")
 abline(v = mean(media_mercurio), lty = 3, col = "red")
 ```
 
@@ -566,7 +566,7 @@ De acuerdo con la gráfica de normalidad podemos observar que esta tiene un comp
 Valores estimados vs residuos. 
 
 ```{r}
-plot(A$fitted.values, A$residuals, ylab = "Residuos", xlab = "Valores Estimados")
+plot(A$fitted.values, A$residuals, ylab = "Residuos", xlab = "Valores Estimados", main = "Valores Estimados vs Residuos")
 abline(h = 0, col = "red")
 ```
 
@@ -583,6 +583,16 @@ La gráfica de independencia muestra una autocorrelación negativa y se observa 
 
 ## Regresión Múltiple 
 
+Como se mencionó anteriormente, las variables a utilizar para el modelo de regresión múltiple son: 
+
+- *X3* = alcalinidad (mg/l de carbonato de calcio)
+- *X4* = PH
+- *X5* = calcio (mg/l)
+- *X6* = clorofila (mg/l)
+- *X7* = concentración media de mercurio (parte por millón) en el tejido muscualar del grupo de peces estudiados en cada lago
+
+Esto debido a que su valor de correlación con respecto a la variable x7 se tiene un nivel que va de débil a moderado negativamente, y además, con el contexto del problema, lo que se quiere obtener está relacionado con la variable x7, pues esta se refiere a la concentración media de mercurio en los lagos, entonces deben de aplicarse diferentes variables independientes para poder determinar los valores de la variable dependiente. 
+
 ```{r}
 db_mercurio_mult = db_mercurio_num[1:5]
 ```
@@ -595,9 +605,13 @@ Rc = rcorr(as.matrix(db_mercurio_mult))
 Rc
 ```
 
+De igual forma, al tener los valores de la correlación, es importante observar que se sigue cumpliendo que los valores p sean menores a 0.05, lo cual nos indica que el modelo es correcto y funcionará correctamente. 
+
 ```{r}
 pairs(db_mercurio_mult, labels=c("Alcalinidad", "PH", "Calcio", "Clorofila", "Estimación"), main = "Matriz de Dispersión", pch = 20)
 ```
+
+La gráfica anterior muestra la correlación de las múltiples variables (por pares), lo cual es equivalente a pasar el dataframe nuérico a un plot; de esta manera podemos tener una visualización más clara de la dispersión de los datos. 
 
 ```{r,message="FALSE"}
 library(GGally)
@@ -612,7 +626,13 @@ mat_cor <- hetcor(db_mercurio_mult)$correlations
 ggcorrplot(mat_cor,type="lower",hc.order = T)
 ```
 
+Retomando los valores de las correlaciones, en el gráfico anterior, podemos observar como existe esta correlación negativa de las variables x3, x4, x5, y x6 con la variable x7, lo que indica que nuestras variables fueron elegidas correctamente y la regresión arrojará buenos resultados. 
+
+Ahora, como paso siguiente se debe de proponer un modelo para después por medio del análisis detectar qué variables no son significativas para el modelo y posteriormente se pueda proponer el mejor modelo considerando solo las variables que si son significativas. 
+
 ### El Modelo
+
+En esta parte se genera el modelo utilizando las variables antes mencionadas para así poder obtener los valores calculados y seguir con el análisis, es importante mencionar que nuestro valor p se sigue manteniendo menor a nuestro valor de significancia lo que indica que nuestro modelo es correcto. 
 
 ```{r}
 R = lm(X7 ~ X3 + X4 + X5 + X6, data = db_mercurio_mult)
@@ -625,7 +645,17 @@ summary(R)
 step(R, direction = "both", trace = 1)
 ```
 
+Para la selección del mejor modelo análizamos los resultados y tenemos que de acuerdo a los criterios de elección se toman en cuenta: 
+
+- La significancia de las variables. 
+- El coeficiente de determinación. 
+- Otros criterios de información
+
+Y el cálculo nos muestra que nuestro mejor modelo es el que descarta la variable menos significativa, la cual es la variable x4, lo que nos lleva a la conclusión de que nuestro mejor modelo para la regresión múltiple es $lm(formula = X7 ~ X3 + X5 + X6, data = dbmercuriomult)$
+
 ### El mejor modelo
+
+Gracias a los resultados anteriores, ahora podemos definir el modelo final, utilizando las variables significativas para el modelo. 
 
 ```{r}
 R1 = lm(X7 ~ X3 + X5 + X6, data = db_mercurio_mult)
@@ -633,7 +663,7 @@ S = summary(R1)
 S
 ```
 
-Intervalos de confianza
+#### Intervalos de confianza
 
 ```{r}
 confint(R1)
@@ -657,15 +687,19 @@ curve(dnorm(x, mean = mean(E), sd = sd(E)), add = TRUE, col = "blue", lwd = 2)
 shapiro.test(E)
 ```
 
+Gracias a las gráficas podemos observar que esta tiene un comportamiento ideal en su simetría.
+
 #### Homocedasticidad y modelo apropiado
 
 Gráfica Valores estimados vs Residuos
 
 ```{r}
-plot(Y, E, ylab = "Residuos", xlab = "Valores estimados", pch = 20, col = "red")
+plot(Y, E, ylab = "Residuos", xlab = "Valores estimados", pch = 20, col = "red", main = "Valores Estimados vs Residuos")
 abline(h = 0, col = "red")
 text(Y[], E[], 1:30, cex = 0.8, pos = 3, offset = 0.2)
 ```
+
+La gráfica de estimados y residuos muestra que efectivamente cumple con los supuestos. 
 
 #### Independencia
 
@@ -673,12 +707,15 @@ Errores vs Orden de observación
 
 ```{r}
 n = length(db_mercurio_mult$X7)
-plot(c(1:n), R1$residuals, type = "l", xlab = "Orden de las observaciones", ylab = "Residuos")
+plot(c(1:n), R1$residuals, type = "l", xlab = "Orden de las observaciones", ylab = "Residuos", main = "Errores vs Orden de observación")
 abline(h = 0, col = "red")
 ```
 
+La gráfica de independencia muestra una autocorrelación negativa y se observa una alternancia muy marcada de residuos positivos y negativos, lo cual puede ser causado por la existencia de ciclos en los errores o relaciones no lineales. 
+
+Prueba de autocorrelación para verificar independencia: H0: rho=0
+
 ```{r}
-#Prueba de autocorrelación para verificar independencia: H0: rho=0
 library(car)
 dwt(R1, alternative = "two.sided")
 ```
@@ -704,6 +741,8 @@ ggplot(data = db_mercurio_mult, aes(x = predict(R1), y = abs(residuos_estandariz
 which(abs(db_mercurio_mult$residuos_estandarizados)>3)
 ```
 
+Con la gráfica anterior se observa que no se identifican observaciones con residuos estandarizados absolutos mayores a 3, por lo tanto no hay valores atípicos. 
+
 #### Datos influyentes
 
 ```{r}
@@ -725,11 +764,12 @@ Se consideran influyentes aquellas observaciones:
 influencePlot(R1)
 ```
 
+En los cálculos y gráfico anterior podemos observar los puntos influyentes, los cuales son los puntos que tienen un impacto en las estimativas del modelo. 
+
 ## Conclusión
 
-* Escribir el Modelo
-* Variabilidad explicada por el modelo (coeficiente de determinación)
-* Significancia del modelo: Valor p del modelo (F)
-* Si se satisfacen todos los supuestos del modelo (indicar ligeros alejamientos)
-* Si hay datos atípicos o datos que influyan en el modelo.
-* En caso de que se haya hecho el análisis sin datos influyentes, se reportan ambos modelos comparando sus mejoras.
+Finalmente, tras haber realizado todo este análisis es posible generar una conclusión acerca del problema sobre la contaminación por mercurio de peces en el agua dulce y gracias a los modelos estadísticos implemnetados fue posible determinar si estos niveles de contaminación son una amenaza contra la salud de los seres humanos. 
+
+Específicamente hablando, el haber empleado la herramienta estadística de ANOVA nos ayudó a determinar que la edad de los peces no tiene un efecto significativo en la contaminación por mercurio, sin embargo, al hacer la nueva columna de concentración que muestra si la media de mercurio sobrepasa o no el límite reglamentario, fue posible identificar que a diferencia de la edad, esta nueva variable si mostraba una diferencia significativa, lo que muestra que si nivel de concentración sobrepasa o no el valor permitido, sí se tiene un efecto en la concentración media de mercurio. 
+
+Por otro lado, tenemos el modelo de regresión múltiple, donde en las gráficas de correlación se encontrarón variables muy cercanas al 1, lo cual puede provocar problemas de multicolinealidad y por ende se decidió implementar en el modelo a las variables de alcalinidad, ph, calcio y clorofila como variables independientes y a la concentración media de mercurio como la variable dependiente, lo cual arrojó que el mejor modelo era solo utilizando las variables más significativas, entonces, de acuerdo a ese resultado podemos concluir que los principales factores que influyen en el nivel de contaminación por mercurio en los peces de los lagos de Florida son la alcalinidad, el calcio y la clorofila. 
