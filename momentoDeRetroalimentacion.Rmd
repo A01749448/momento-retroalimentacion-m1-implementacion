@@ -362,6 +362,8 @@ edad_peces_table
 barplot(edad_peces_table, width = 1, cex.names = 0.6, col = c("cadetblue", "lightcoral"), main = "Frecuencia Edad de los Peces", xlab = "Frecuencia", ylab = "Edad", horiz = TRUE, las = 2, legend = c("Jóvenes", "Maduros"), args.legend = list(x = "bottomright", horiz = FALSE))
 ```
 
+De acuerdo con la gráfica anterior podemos observar que en el dataset utilizado tenemos una mayor cantidad de peces de una edad madura que peces de una edad jóven, lo cual es importante a tomar en cuenta si existe la posibilidad de que la concentración de mercurio varie con respecto a la edad de los peces. 
+
 ###### Frecuencia de Lagos que Superaron los $0.5 mg de Hg/Kg$ Establecidos por los Reglamentos
 
 ```{r}
@@ -374,6 +376,8 @@ db_mercurio_cnt_table
 # Gráfica de Frecuencia
 barplot(db_mercurio_cnt_table, width = 1, cex.names = 0.6, col = c("mediumseagreen", "mediumpurple3"), main = "Frecuencia de Lagos que Superaron el Valor Establecido", xlab = "Frecuencia", ylab = "Estatus Concentración ", horiz = TRUE, las = 2, legend = c("mercurio < 0.5", "mercurio > 0.5"), args.legend = list(x = "topright", horiz = FALSE))
 ```
+
+El gráfico anterior se realizó creando una nueva columna tomando el valor permitido de concentración y mostrando así si cada río lo sobrepasaba o se mantenía debajo del mismo, obteniendo así que apróximadamente el 58% de los ríos cuenta con una concentración media de mercurio menor al 0.5 permitido por los reglamentos, lo que indica que una parte significativa se encuentra contaminada y es probable que sea dañina pra el ser humano.  
 
 ###### Porcentajes y Distribución de PH
 
@@ -390,6 +394,8 @@ pie(db_ph_cnt_table, border="white", col = colors, main = "Gráfica del PH", lab
 legend("topright", c("Ácido", "Neutro", "Alcalino"), fill=colors)
 ```
 
+En este gráfico de pastel podemos observar que existe un mayor porcentaje de ácidos de acuerdo a los registros de ph, lo cual indica que, en efecto, existe contaminación en los lagos, sin embargo también se tiene que un 35.85% el ph es neutro, un 5.66% es alcalino y lo restante es ácido. 
+
 ## Búsqueda de Correlaciones
 
 ```{r}
@@ -405,6 +411,8 @@ library(corrplot)
 corrplot(cor(db_mercurio_num), method = "number", col = COL1("Blues"), tl.col = "black", main = "Matriz de Correlación", mar=c(0,0,1,0))
 corrplot(cor(db_mercurio_num), method = "color", col = COL1("Blues"), addCoef.col = "black", cl.pos = "n", tl.col = "black", main = "Matriz de Correlación", mar=c(0,0,1,0))
 ```
+
+
 
 ## ANOVA
 
