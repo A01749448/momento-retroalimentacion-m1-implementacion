@@ -1,0 +1,658 @@
+---
+title: "Momento de Retroalimentación (Portafolio Implementación)"
+subtitle: "Construcción de un Modelo Estadístico Base"
+author: "Jorge Chávez Badillo A01749448"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Contaminación por Mercurio
+
+## Descripción del Problema
+
+La contaminación por mercurio de peces en el agua dulce comestibles es una amenaza directa contra nuestra salud. Se llevó a cabo un estudio reciente en 53 lagos de Florida con el fin de examinar los factores que influían en el nivel de contaminación por mercurio. Las variables que se midieron se encuentran en mercurio.csv   Descargar mercurio.csv   y su descripción es la siguiente: 
+
+- *X1* = número de indentificación
+- *X2* = nombre del lago
+- *X3* = alcalinidad (mg/l de carbonato de calcio)
+- *X4* = PH
+- *X5* = calcio (mg/l)
+- *X6* = clorofila (mg/l)
+- *X7* = concentración media de mercurio (parte por millón) en el tejido muscualar del grupo de peces estudiados en cada lago
+- *X8* = número de peces estudiados en el lago
+- *X9* = mínimo de la concentración de mercurio en cada grupo de peces
+- *X10* = máximo de la concentración de mercurio en cada grupo de peces
+- *X11* = estimación (mediante regresión) de la concentración de mercurio en el pez de 3 años (o promedio de mercurio cuando la edad no está disponible)
+- *X12* = indicador de la edad de los peces (0: jóvenes; 1: maduros)
+
+Alrededor de la principal pregunta de investigación que surge en este estudio: ¿Cuáles son los principales factores que influyen en el nivel de contaminación por mercurio en los peces de los lagos de Florida? pueden surgir preguntas paralelas que desglosan esta pregunta general:
+
+1. ¿Hay evidencia para suponer que la concentración promedio de mercurio en los lagos es dañino para la salud humana? Considera que las normativas de referencia para evaluar los niveles máximos de Hg (Reglamento 34687-MAG y los reglamentos internacionales CE 1881/2006 y Codex Standard 193-1995) establecen que la concentración promedio de mercurio en productos de la pesca no debe superar los 0.5 mg de Hg/kg.
+
+2. ¿Habrá diferencia significativa entre la concentración de mercurio por la edad de los peces?
+
+3. Si el muestreo se realizó lanzando una red y analizando los peces que la red encontraba ¿Habrá influencia del número de peces encontrados en la concentración de mercurio en los peces?
+
+4. ¿Las concentraciones de alcalinidad, clorofila, calcio en el agua del lago influyen en la concentración de mercurio de los peces?
+
+## Exploración de la Base de Datos
+
+### Lectura de Datos
+
+```{r}
+db_mercurio = read.csv("mercurio.csv")
+n_variables = length(db_mercurio)
+n_rows = nrow(db_mercurio)
+
+sprintf("Número de Variables: %s", n_variables)
+sprintf("Número de Registros: %s", n_rows)
+```
+
+### Cálculo de Medidas Estadísticas y Visualización de los Datos
+
+#### Variables Cuantitativas
+
+##### Medidas de Tendencia Central y de Dispersión 
+
+```{r}
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+db_mercurio_num = db_mercurio[3:12]
+n = length(db_mercurio_num) # número de variables 
+d = matrix(NA, ncol = 9, nrow = n) 
+for(i in 1:n) { 
+  d[i, ] <- c(as.numeric(summary(db_mercurio_num[, i])), sd(db_mercurio_num[, i]), var(db_mercurio_num[, i]), getmode(db_mercurio_num[, i])) 
+} 
+m = as.data.frame(d) 
+row.names(m) = c("X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10", "X11", "X12") 
+names(m) = c("Mínimo", "Q1", "Mediana", "Media", "Q3", "Máximo", "Desv Est", "Varianza", "Moda") 
+m
+```
+
+Al hacer el cáculo de los datos estadísticos, es posible tener un mayor entendimiento de la información para facilitar la elección de las variables que serán utilizadas, además de elegir cuáles herramientas estadísticas serán implementadas para la solución del problema. 
+
+##### Medidas de Posición
+
+###### Boxplot y Valores Atípicos
+
+```{r}
+x3 = db_mercurio_num$X3
+x4 = db_mercurio_num$X4
+x5 = db_mercurio_num$X5
+x6 = db_mercurio_num$X6
+x7 = db_mercurio_num$X7
+x8 = db_mercurio_num$X8
+x9 = db_mercurio_num$X9
+x10 = db_mercurio_num$X10
+x11 = db_mercurio_num$X11
+
+# Cuartiles Para x3
+q1_3 = quantile(x3, 0.25)
+q3_3 = quantile(x3, 0.75)
+rc_3 = q3_3 - q1_3 # Rango intercuartílico
+y2_3 = q3_3 + 1.5 * rc_3
+# IQR(x3)
+
+# Cuartiles Para x4
+q1_4 = quantile(x4, 0.25)
+q3_4 = quantile(x4, 0.75)
+rc_4 = q3_4 - q1_4 # Rango intercuartílico
+y2_4 = q3_4 + 1.5 * rc_4
+# IQR(x3)
+
+# Cuartiles Para x5
+q1_5 = quantile(x5, 0.25)
+q3_5 = quantile(x5, 0.75)
+rc_5 = q3_5 - q1_5 # Rango intercuartílico
+y2_5 = q3_5 + 1.5 * rc_5
+# IQR(x5)
+
+# Cuartiles Para x6
+q1_6 = quantile(x6, 0.25)
+q3_6 = quantile(x6, 0.75)
+rc_6 = q3_6 - q1_6 # Rango intercuartílico
+y2_6 = q3_6 + 1.5 * rc_6
+# IQR(x6)
+
+# Cuartiles Para x7
+q1_7 = quantile(x7, 0.25)
+q3_7 = quantile(x7, 0.75)
+rc_7 = q3_7 - q1_7 # Rango intercuartílico
+y2_7 = q3_7 + 1.5 * rc_7
+# IQR(x7)
+
+# Cuartiles Para x8
+q1_8 = quantile(x8, 0.25)
+q3_8 = quantile(x8, 0.75)
+rc_8 = q3_8 - q1_8 # Rango intercuartílico
+y2_8 = q3_8 + 1.5 * rc_8
+# IQR(x8)
+
+# Cuartiles Para x9
+q1_9 = quantile(x9, 0.25)
+q3_9 = quantile(x9, 0.75)
+rc_9 = q3_9 - q1_9 # Rango intercuartílico
+y2_9 = q3_9 + 1.5 * rc_9
+# IQR(x9)
+
+# Cuartiles Para x10
+q1_10 = quantile(x10, 0.25)
+q3_10 = quantile(x10, 0.75)
+rc_10 = q3_10 - q1_10 # Rango intercuartílico
+y2_10 = q3_10 + 1.5 * rc_10
+# IQR(x10)
+
+# Cuartiles Para x11
+q1_11 = quantile(x11, 0.25)
+q3_11 = quantile(x11, 0.75)
+rc_11 = q3_11 - q1_11 # Rango intercuartílico
+y2_11 = q3_11 + 1.5 * rc_11
+# IQR(x11)
+
+par(mfrow = c(3, 3)) 
+
+boxplot(x3, main = "Boxplot Alcalinidad", horizontal = TRUE, ylim = c(0, y2_3))
+abline(v = y2_3, col="red")
+X_3 = db_mercurio_num[x3 < y2_3, c("X3")]
+print("Summary x3")
+summary(X_3)
+
+boxplot(x4, main = "Boxplot PH", horizontal = TRUE, ylim = c(0, y2_4))
+abline(v = y2_4, col="red")
+X_4 = db_mercurio_num[x4 < y2_4, c("X4")]
+print("Summary x4")
+summary(X_4)
+
+boxplot(x5, main = "Boxplot Calcio", horizontal = TRUE, ylim = c(0, y2_5))
+abline(v = y2_5, col="red")
+X_5 = db_mercurio_num[x5 < y2_5, c("X5")]
+print("Summary x5")
+summary(X_4)
+
+boxplot(x6, main = "Boxplot Clorofila", horizontal = TRUE, ylim = c(0, y2_6))
+abline(v = y2_6, col="red")
+X_6 = db_mercurio_num[x6 < y2_6, c("X6")]
+print("Summary x6")
+summary(X_6)
+
+boxplot(x7, main = "Boxplot Media Mercurio", horizontal = TRUE, ylim = c(0, y2_7))
+abline(v = y2_7, col="red")
+X_7 = db_mercurio_num[x7 < y2_7, c("X7")]
+print("Summary x7")
+summary(X_7)
+
+boxplot(x8, main = "Boxplot # de Peces", horizontal = TRUE, ylim = c(0, y2_8))
+abline(v = y2_8, col="red")
+X_8 = db_mercurio_num[x8 < y2_8, c("X8")]
+print("Summary x8")
+summary(X_8)
+
+boxplot(x9, main = "Boxplot Mínimo Mercurio", horizontal = TRUE, ylim = c(0, y2_9))
+abline(v = y2_9, col="red")
+X_9 = db_mercurio_num[x9 < y2_9, c("X9")]
+print("Summary x9")
+summary(X_9)
+
+boxplot(x10, main = "Boxplot Máximo Mercurio", horizontal = TRUE, ylim = c(0, y2_10))
+abline(v = y2_10, col="red")
+X_10 = db_mercurio_num[x10 < y2_10, c("X10")]
+print("Summary x10")
+summary(X_10)
+
+boxplot(x11, main = "Boxplot Estimación", horizontal = TRUE, ylim = c(0, y2_11))
+abline(v = y2_11, col="red")
+X_11 = db_mercurio_num[x11 < y2_11, c("X11")]
+print("Summary x11")
+summary(X_11)
+```
+
+Como se puede observar en los boxblots anteriores, tenemos cada una de las variables numéricas representadas de esta forma para poder tener un mayor entendimiento de su comportamiento. 
+
+Con estos gráficos es posible obtener información sobre la forma general de la curva, es decir características como la simetría, la curtosis, la mediana, distribución de los datos hacia ambos lados de los valores centrales así como también la presencia de datos atípicos.
+
+Es importante mencionar que los boxplots de las variables del número de peces y el calcio presentan algunos datos atípicos ya que los cálculos no exceden los valores del rango, al observar la gráfica se puede concluir que estos no tienen un gran efecto los cálculos posteriores pues no son una cantidad que represente un riesgo. 
+
+##### Distribución de los Datos
+
+###### Q-Q Plot e Histogramas
+
+```{r}
+# x3
+# QQplot
+qqnorm(x3, main = "Normal Q-Q Plot Alcalinidad ")
+qqline(x3)
+# Histrograma
+hist(x3, main = "Histograma de Alcalinidad", prob = TRUE, col = 0)
+x = seq(min(x3), max(x3), 0.1)
+y = dnorm(x, mean(x3), sd(x3))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una distribución con colas delgadas (alta, curtosis y distribución leptocúrtica), lo cual se comprueba con el histograma y podemos verificar que, en efecto, la distribución cuenta con una gran concentración de valores. 
+
+```{r}
+# x4
+# QQplot
+qqnorm(x4, main = "Normal Q-Q Plot PH ")
+qqline(x4)
+# Histrograma
+hist(x4, main = "Histograma de PH", prob = TRUE, col = 0)
+x = seq(min(x4), max(x4), 0.1)
+y = dnorm(x, mean(x4), sd(x4))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal es aproximádamente ideal, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran con una distribución simétrica. 
+
+```{r}
+# x5
+# QQplot
+qqnorm(x5, main = "Normal Q-Q Plot Calcio ")
+qqline(x5)
+# Histrograma
+hist(x5, main = "Histograma de PH", prob = TRUE, col = 0)
+x = seq(min(x5), max(x5), 0.1)
+y = dnorm(x, mean(x5), sd(x5))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una asimetría positiva con un sesgo a la derecha, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran recargados hacia el lado izquierdo, lo que significa que la distribución se encuentra sesgada a la derecha. 
+
+```{r}
+# x6
+# QQplot
+qqnorm(x6, main = "Normal Q-Q Plot Clorofila ")
+qqline(x6)
+# Histrograma
+hist(x6, main = "Histograma de Clorofila", prob = TRUE, col = 0)
+x = seq(min(x6), max(x6), 0.1)
+y = dnorm(x, mean(x6), sd(x6))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una asimetría positiva con un sesgo a la derecha, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran recargados hacia el lado izquierdo, lo que significa que la distribución se encuentra sesgada a la derecha. 
+
+```{r}
+# x7
+# QQplot
+qqnorm(x7, main = "Normal Q-Q Plot Concentración Media de Mercurio")
+qqline(x7)
+# Histrograma
+hist(x7, main = "Histograma de Concentración Media de Mercurio", prob = TRUE, col = 0)
+x = seq(min(x7), max(x7), 0.1)
+y = dnorm(x, mean(x7), sd(x7))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una asimetría positiva con un sesgo ligeramente a la derecha, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran mínimamente recargados hacia el lado izquierdo, lo que significa que la distribución se encuentra sesgada a la derecha. 
+
+```{r}
+# x8
+# QQplot
+qqnorm(x8, main = "Normal Q-Q Plot Número de Peces Estudiados")
+qqline(x8)
+# Histrograma
+hist(x8, main = "Histograma de Número de Peces Estudiados", prob = TRUE, col = 0)
+x = seq(min(x8), max(x8), 0.1)
+y = dnorm(x, mean(x8), sd(x8))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una distribución con colas gruesas (baja curtosis, distribución platicúrtica), lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos son asímetricos con un ligero sesgo a la derecha. 
+
+```{r}
+# x9
+# QQplot
+qqnorm(x9, main = "Normal Q-Q Plot Mínimo de la Concentración de Mercurio")
+qqline(x9)
+# Histrograma
+hist(x9, main = "Histograma de Mínimo de la Concentración de Mercurio", prob = TRUE, col = 0)
+x = seq(min(x9), max(x9), 0.1)
+y = dnorm(x, mean(x9), sd(x9))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una asimetría positiva con un sesgo a la derecha, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran recargados hacia el lado izquierdo, lo que significa que la distribución se encuentra sesgada a la derecha. 
+
+```{r}
+# x10
+# QQplot
+qqnorm(x10, main = "Normal Q-Q Plot Máximo de la Concentración de Mercurio")
+qqline(x10)
+# Histrograma
+hist(x10, main = "Histograma de Máximo de la Concentración de Mercurio", prob = TRUE, col = 0)
+x = seq(min(x10), max(x10), 0.1)
+y = dnorm(x, mean(x10), sd(x10))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal es casi ideal, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran recargados casi simétricos.
+
+```{r}
+# x11
+# QQplot
+qqnorm(x11, main = "Normal Q-Q Plot Estimación")
+qqline(x11)
+# Histrograma
+hist(x11, main = "Histograma de Estimación", prob = TRUE, col = 0)
+x = seq(min(x11), max(x11), 0.1)
+y = dnorm(x, mean(x11), sd(x11))
+lines(x, y, col = "red")
+```
+
+Como podemos observar en la gráfica de qqplot, tenemos que la probabilidad normal tiene una asimetría positiva con un sesgo a la derecha, lo cual se comprueba con el histograma y podemos verificar que, en efecto, los datos se encuentran recargados hacia el lado izquierdo, lo que significa que la distribución se encuentra sesgada a la derecha. 
+
+#### Variables Cualitativas 
+
+##### Tabla de Distribución de Frecuencia
+
+###### Frecuencia de la Edad de Los Peces
+
+```{r}
+edad_peces_table = table(db_mercurio_num$X12)
+print("Tabla de Distribución de Frecuencia Edad de los Peces: ")
+edad_peces_table
+
+# Gráfica de Frecuencia
+barplot(edad_peces_table, width = 1, cex.names = 0.6, col = c("cadetblue", "lightcoral"), main = "Frecuencia Edad de los Peces", xlab = "Frecuencia", ylab = "Edad", horiz = TRUE, las = 2, legend = c("Jóvenes", "Maduros"), args.legend = list(x = "bottomright", horiz = FALSE))
+```
+
+###### Frecuencia de Lagos que Superaron los $0.5 mg de Hg/Kg$ Establecidos por los Reglamentos
+
+```{r}
+db_mercurio_cnt = db_mercurio_num
+db_mercurio_cnt$X13 <- with(db_mercurio_cnt, ifelse(X7 > 0.5, 1, 0))
+db_mercurio_cnt_table = table(db_mercurio_cnt$X13)
+print("Tabla de Distribución de Lagos que Superaron los 0.5 mg de Hg/Kg: ")
+db_mercurio_cnt_table
+
+# Gráfica de Frecuencia
+barplot(db_mercurio_cnt_table, width = 1, cex.names = 0.6, col = c("mediumseagreen", "mediumpurple3"), main = "Frecuencia de Lagos que Superaron el Valor Establecido", xlab = "Frecuencia", ylab = "Estatus Concentración ", horiz = TRUE, las = 2, legend = c("mercurio < 0.5", "mercurio > 0.5"), args.legend = list(x = "topright", horiz = FALSE))
+```
+
+###### Porcentajes y Distribución de PH
+
+```{r}
+db_mercurio_ph = db_mercurio_num
+db_mercurio_ph$X4 <- with(db_mercurio_ph, ifelse(X4 < 7.0, "Ácido", ifelse(X4 == 7.0, "Neutro", "Alcalino")))
+db_ph_cnt_table = table(db_mercurio_ph$X4)
+print("Tabla de Distribución del PH: ")
+db_ph_cnt_table
+
+#Gráfica de pie
+colors <- c("lightcyan2", "mediumseagreen", "plum2")
+pie(db_ph_cnt_table, border="white", col = colors, main = "Gráfica del PH", labels = paste0(round(100 * db_ph_cnt_table/sum(db_ph_cnt_table), 2), "%"))
+legend("topright", c("Ácido", "Neutro", "Alcalino"), fill=colors)
+```
+
+## Búsqueda de Correlaciones
+
+```{r}
+library(psych)
+Rc = corr.test(db_mercurio_num)
+Rc
+```
+
+### Visualización de la Matriz de Correlación
+
+```{r}
+library(corrplot)
+corrplot(cor(db_mercurio_num), method = "number", col = COL1("Blues"), tl.col = "black", main = "Matriz de Correlación", mar=c(0,0,1,0))
+corrplot(cor(db_mercurio_num), method = "color", col = COL1("Blues"), addCoef.col = "black", cl.pos = "n", tl.col = "black", main = "Matriz de Correlación", mar=c(0,0,1,0))
+```
+
+## ANOVA
+
+```{r}
+# Edad 
+media_mercurio_j = db_mercurio_num[db_mercurio_num$X12 == 0, ]$X7
+media_mercurio_m = db_mercurio_num[db_mercurio_num$X12 == 1, ]$X7
+
+print("jovenes")
+media_mercurio_j
+print("maduros")
+media_mercurio_m
+
+media_mercurio = c(media_mercurio_j, media_mercurio_m)
+media_mercurio
+len_j = length(media_mercurio_j)
+len_m = length(media_mercurio_m)
+
+edad = c(rep("J", len_j), rep("M", len_m))
+edad = factor(edad)
+edad
+```
+
+```{r}
+A <- aov(media_mercurio ~ edad)
+summary(A)
+```
+
+```{r}
+m = tapply(media_mercurio, edad, mean)
+s = tapply(media_mercurio, edad, sd)
+n = tapply(media_mercurio, edad, length)
+
+print("Medias de los tratamientos:")
+m
+print("Desviación estándar de los tratamientos:")
+s
+print("Tamaño de la muestra de los tratamientos")
+n
+```
+
+```{r}
+sm = s / sqrt(n)
+E = abs(qt(0.025, n - 1)) * sm
+In = m - E
+Sup = m + E
+In
+Sup
+```
+
+```{r}
+plot(0, ylim = c(0,3), xlim = c(0, 1), yaxt = "n", ylab = "", xlab = "Tiempo de 
+secado", main = "Secado de diferentes tipos de pintura")
+axis(2, at = c(1:2), labels = c("J", "M"))
+for(i in 1:2) {
+  arrows(In[i], i, Sup[i], i, angle = 90, code = 3, length = 0.1, lwd = 2, col = i + 2)
+  points(m[i], i, pch = 19, cex = 1.1, col = i + 2)
+}
+abline(v = mean(media_mercurio), lty = 3, col = "red")
+```
+
+```{r}
+boxplot(media_mercurio ~ edad, col = 2:5, horizontal = TRUE)
+abline(v = mean(media_mercurio), lty = 3, col = "red")
+```
+
+```{r}
+Tu = TukeyHSD(A)
+Tu
+plot(TukeyHSD(A))
+```
+
+### Verificación de supuestos:
+
+#### Normalidad
+
+```{r}
+qqnorm(A$residuals)
+qqline(A$residuals, col = "red")
+
+hist(A$residuals, col = 0)
+```
+
+#### Homocedasticidad
+
+Valores estimados vs residuos. 
+
+```{r}
+plot(A$fitted.values, A$residuals, ylab = "Residuos", xlab = "Valores Estimados")
+abline(h = 0, col = "red")
+```
+
+#### Independencia
+
+```{r}
+plot(c(1:53), A$residuals, type = "l", main = "Errores vs Orden de Observación", xlab = "Orden de las observaciones", ylab = "Residuos")
+abline(h = 0, col = "red")
+```
+
+## Regresión Múltiple 
+
+```{r}
+db_mercurio_mult = db_mercurio_num[1:5]
+```
+
+### Correlación
+
+```{r}
+library(Hmisc)
+Rc = rcorr(as.matrix(db_mercurio_mult))
+Rc
+```
+
+```{r}
+pairs(db_mercurio_mult, labels=c("Alcalinidad", "PH", "Calcio", "Clorofila", "Estimación"), main = "Matriz de Dispersión", pch = 20)
+```
+
+```{r,message="FALSE"}
+library(GGally)
+ggpairs(db_mercurio_mult, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+```
+
+```{r}
+library(ggcorrplot)
+library(polycor)
+mat_cor <- hetcor(db_mercurio_mult)$correlations
+ggcorrplot(mat_cor,type="lower",hc.order = T)
+```
+
+### El Modelo
+
+```{r}
+R = lm(X7 ~ X3 + X4 + X5 + X6, data = db_mercurio_mult)
+summary(R)
+```
+
+### Selección del mejor modelo
+
+```{r}
+step(R, direction = "both", trace = 1)
+```
+
+### El mejor modelo
+
+```{r}
+R1 = lm(X7 ~ X3 + X5 + X6, data = db_mercurio_mult)
+S = summary(R1)
+S
+```
+
+Intervalos de confianza
+
+```{r}
+confint(R1)
+```
+
+### Verificación de supuestos
+
+#### Normalidad
+
+```{r}
+E = R1$residuals
+Y = R1$fitted.values
+
+qqnorm(E)
+qqline(E, col = "red")
+
+hist(E, col = "lightcyan", freq = FALSE, main = "Histograma de Residuos", xlim = c(-0.5, 1), ylim = c(0, 3), xlab = "", ylab = "Densidad")
+lines(density(E), col = "red")
+curve(dnorm(x, mean = mean(E), sd = sd(E)), add = TRUE, col = "blue", lwd = 2)
+
+shapiro.test(E)
+```
+
+#### Homocedasticidad y modelo apropiado
+
+Gráfica Valores estimados vs Residuos
+
+```{r}
+plot(Y, E, ylab = "Residuos", xlab = "Valores estimados", pch = 20, col = "red")
+abline(h = 0, col = "red")
+text(Y[], E[], 1:30, cex = 0.8, pos = 3, offset = 0.2)
+```
+
+#### Independencia
+
+Errores vs Orden de observación
+
+```{r}
+n = length(db_mercurio_mult$X7)
+plot(c(1:n), R1$residuals, type = "l", xlab = "Orden de las observaciones", ylab = "Residuos")
+abline(h = 0, col = "red")
+```
+
+```{r}
+#Prueba de autocorrelación para verificar independencia: H0: rho=0
+library(car)
+dwt(R1, alternative = "two.sided")
+```
+
+### Datos atípicos o influyentes
+
+#### Datos atípicos
+
+Se estandarizan los residuos y se observa si hay distancias mayores a 3.
+
+```{r}
+library(dplyr)
+db_mercurio_mult$residuos_estandarizados <- rstudent(R1)  #Introduce una columna en D con los residuos del modelo estandarizados
+
+ggplot(data = db_mercurio_mult, aes(x = predict(R1), y = abs(residuos_estandarizados))) +
+  geom_hline(yintercept = 3, color = "red", linetype = "dashed") +
+  # se identifican en rojo observaciones con residuos estandarizados absolutos > 3
+  geom_point(aes(color = ifelse(abs(residuos_estandarizados) > 3, 'red', 'black'))) +
+  scale_color_identity() +
+  labs(title = "Distribución de los residuos estandarizados",x = "predicción modelo") + 
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5))
+
+which(abs(db_mercurio_mult$residuos_estandarizados)>3)
+```
+
+#### Datos influyentes
+
+```{r}
+summary(influence.measures(R1))
+```
+
+
+```{r}
+influence.measures(R1)
+```
+
+Se consideran influyentes aquellas observaciones:  
+
+* que tengan leverages mayores a 2.5(p+1)/n = 2.5*3/30 =2.5/10 0.25
+* que tengan distancia de Cook superiores a 4/n.
+
+
+```{r}
+influencePlot(R1)
+```
+
+## Conclusión
+
+* Escribir el Modelo
+* Variabilidad explicada por el modelo (coeficiente de determinación)
+* Significancia del modelo: Valor p del modelo (F)
+* Si se satisfacen todos los supuestos del modelo (indicar ligeros alejamientos)
+* Si hay datos atípicos o datos que influyan en el modelo.
+* En caso de que se haya hecho el análisis sin datos influyentes, se reportan ambos modelos comparando sus mejoras.
