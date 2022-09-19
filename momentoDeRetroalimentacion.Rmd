@@ -1,7 +1,7 @@
 ---
-title: "Momento de Retroalimentación (Portafolio Implementación)"
-subtitle: "Construcción de un Modelo Estadístico Base"
-author: "Jorge Chávez Badillo A01749448"
+title: "Momento de Retroalimentación (Portafolio Implementación) Construcción de un modelo estadístico base"
+subtitle: "Inteligencia Artificial Avanzada para la Ciencia de Datos Módulo 1: Estadística para la Ciencia de Datos"
+author: "Jorge Chávez Badillo A01749448 Grupo 101"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
@@ -10,7 +10,13 @@ output:
 
 # Contaminación por Mercurio
 
-## Descripción del Problema
+## Resumen 
+
+En este momento de retroalimentación de implementación fue necesario implementar diferentes modelos estadísticos para tratar el problema de contaminción de mercurio en lagos, ya que este es un tema sumamente importante, pues además de afectar la vida de los peces, también puede llegar a afectar de una forma fuerte la salud de los seres humanos si se consume un pescado contaminado por mercurio, por esta razón, fue necesario hacer un entendimiento de datos riguroso para poder decidir de qué manera implementar los modelos y que así se llegara a una conclusión sobre qué factores son los que tienen mayor efeto en la contaminación de los lagos. En este trabajo se implementó la regresión lineal múltiple y se encontró que los factores con mayor efecto en la media de concentración de mercurio son la alcalinidad, el calcio y la clorofila y para el ANOVA, se encontró que la edad de los peces no tiene efecto en la media de concentración de mercurio, sin embargo, la variable que muestra si la media se pasa o no del valor permitido si tiene un mayor efecto en la media de merurio. 
+
+## Introducción 
+
+### Descripción del Problema
 
 La contaminación por mercurio de peces en el agua dulce comestibles es una amenaza directa contra nuestra salud. Se llevó a cabo un estudio reciente en 53 lagos de Florida con el fin de examinar los factores que influían en el nivel de contaminación por mercurio. Las variables que se midieron se encuentran en mercurio.csv   Descargar mercurio.csv   y su descripción es la siguiente: 
 
@@ -36,6 +42,8 @@ Alrededor de la principal pregunta de investigación que surge en este estudio: 
 3. Si el muestreo se realizó lanzando una red y analizando los peces que la red encontraba ¿Habrá influencia del número de peces encontrados en la concentración de mercurio en los peces?
 
 4. ¿Las concentraciones de alcalinidad, clorofila, calcio en el agua del lago influyen en la concentración de mercurio de los peces?
+
+Es muy importante el poder analizar estos datos, pues de alguna manera nos permite conocer y entender el comportamiento de la contaminación de lagos por mercurio, lo que en algún futuro puede ser de ayuda para evitar o disminuir esta problemática, pues esta tiene un nivel daño bastante elevado pues es posible tener consecuencias negativas en la salud de los peces y la de los seres humanos. 
 
 ## Exploración de la Base de Datos
 
@@ -773,3 +781,7 @@ Finalmente, tras haber realizado todo este análisis es posible generar una conc
 Específicamente hablando, el haber empleado la herramienta estadística de ANOVA nos ayudó a determinar que la edad de los peces no tiene un efecto significativo en la contaminación por mercurio, sin embargo, al hacer la nueva columna de concentración que muestra si la media de mercurio sobrepasa o no el límite reglamentario, fue posible identificar que a diferencia de la edad, esta nueva variable si mostraba una diferencia significativa, lo que muestra que si nivel de concentración sobrepasa o no el valor permitido, sí se tiene un efecto en la concentración media de mercurio. 
 
 Por otro lado, tenemos el modelo de regresión múltiple, donde en las gráficas de correlación se encontrarón variables muy cercanas al 1, lo cual puede provocar problemas de multicolinealidad y por ende se decidió implementar en el modelo a las variables de alcalinidad, ph, calcio y clorofila como variables independientes y a la concentración media de mercurio como la variable dependiente, lo cual arrojó que el mejor modelo era solo utilizando las variables más significativas, entonces, de acuerdo a ese resultado podemos concluir que los principales factores que influyen en el nivel de contaminación por mercurio en los peces de los lagos de Florida son la alcalinidad, el calcio y la clorofila. 
+
+## Anexos
+
+Liga de Github: https://github.com/A01749448/momento-retroalimentacion-m1-implementacion.git
