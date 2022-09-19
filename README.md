@@ -2,3 +2,4 @@
 ## Portafolio Implementación
 ### Jorge Chávez Badillo A01749448
 Módulo 1 Construcción de un modelo estadístico base.
+Contaminación por Mercurio
